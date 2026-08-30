@@ -16,6 +16,14 @@
 <div class="container" id="content">
     <h2>ডকুমেন্ট লোড হচ্ছে...</h2>
 </div>
+// 404 রিডাইরেক্ট হ্যান্ডলার
+(function() {
+    var redirect = sessionStorage.redirect;
+    delete sessionStorage.redirect;
+    if (redirect && redirect !== location.href) {
+        history.replaceState(null, null, redirect);
+    }
+})();
 
 <script>
     // ইমেজের HTML ডেটাবেস (টোকেন অনুযায়ী)
