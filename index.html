@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ডকুমেন্ট ভিউয়ার</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #eef2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px; width: 100%; text-align: center; }
+        img { max-width: 100%; height: auto; border: 1px solid #ccc; margin-top: 15px; border-radius: 4px; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="content">
+    <h2>ডকুমেন্ট লোড হচ্ছে...</h2>
+</div>
+
+<script>
+    // ইমেজের HTML ডেটাবেস (টোকেন অনুযায়ী)
+    const db = {
+        "A4U1EUU4MHZMNHhRMm1VUFKrWIRndz09": {
+            title: "ভূমি উন্নয়ন কর রসিদ",
+            image: "https://via.placeholder.com/600x400.png?text=Land+Tax+Document"
+        },
+        "XYZ123ABC456": {
+            title: "অন্যান্য অনলাইন ফাইল",
+            image: "https://via.placeholder.com/600x400.png?text=Sample+File+Image"
+        }
+    };
+
+    function renderDocument() {
+        const path = window.location.pathname;
+        const parts = path.split('/').filter(Boolean);
+        
+        // URL থেকে টোকেন বের করা (যেমন: /dakhila-print/TOKEN)
+        const token = parts[parts.length - 1]; 
+        const docData = db[token];
+
+        const contentDiv = document.getElementById('content');
+
+        if (docData) {
+            // টোকেন পাওয়া গেলে ইমেজের HTML রেন্ডার হবে
+            contentDiv.innerHTML = `
+                <h2>${docData.title}</h2>
+                <hr>
+                <img src="${docData.image}" alt="Document Image">
+            `;
+        } else if (parts.length === 0 || token === "index.html") {
+            contentDiv.innerHTML = `<h2>স্বাগতম! ড্যাশবোর্ডে কোনো টোকেন দেওয়া হয়নি।</h2>`;
+        } else {
+            contentDiv.innerHTML = `<h2 class="error">404 - ডকুমেন্টটি পাওয়া যায়নি!</h2>`;
+        }
+    }
+
+    renderDocument();
+</script>
+
+</body>
+</html>
+
