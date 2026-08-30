@@ -16,16 +16,17 @@
 <div class="container" id="content">
     <h2>ডকুমেন্ট লোড হচ্ছে...</h2>
 </div>
-// 404 রিডাইরেক্ট হ্যান্ডলার
-(function() {
-    var redirect = sessionStorage.redirect;
-    delete sessionStorage.redirect;
-    if (redirect && redirect !== location.href) {
-        history.replaceState(null, null, redirect);
-    }
-})();
 
 <script>
+    // ৪-৪ রিডাইরেক্ট হ্যান্ডলার (এখন সঠিক স্থানে <script> ট্যাগের ভেতরে রয়েছে)
+    (function() {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+            history.replaceState(null, null, redirect);
+        }
+    })();
+
     // ইমেজের HTML ডেটাবেস (টোকেন অনুযায়ী)
     const db = {
         "A4U1EUU4MHZMNHhRMm1VUFKrWIRndz09": {
@@ -42,7 +43,7 @@
         const path = window.location.pathname;
         const parts = path.split('/').filter(Boolean);
         
-        // URL থেকে টোকেন বের করা (যেমন: /dakhila-print/TOKEN)
+        // URL থেকে টোকেন বের করা
         const token = parts[parts.length - 1]; 
         const docData = db[token];
 
@@ -55,7 +56,7 @@
                 <hr>
                 <img src="${docData.image}" alt="Document Image">
             `;
-        } else if (parts.length === 0 || token === "index.html") {
+        } else if (parts.length === 0 || token === "index.html" || token === "taxportal.github.io") {
             contentDiv.innerHTML = `<h2>স্বাগতম! ড্যাশবোর্ডে কোনো টোকেন দেওয়া হয়নি।</h2>`;
         } else {
             contentDiv.innerHTML = `<h2 class="error">404 - ডকুমেন্টটি পাওয়া যায়নি!</h2>`;
@@ -67,4 +68,3 @@
 
 </body>
 </html>
-
