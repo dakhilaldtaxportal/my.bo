@@ -95,41 +95,40 @@
         <p id="errorMsg" class="error" style="display: none;">কোনো নথি পাওয়া যায়নি!</p>
     </div>
 
-    <script>
-        // URL থেকে ছবির নাম খুঁজে বের করার লজিক
-        const urlParams = new URLSearchParams(window.location.search);
-        let docName = urlParams.get('doc');
 
-        if (!docName) {
-            const pathParts = window.location.pathname.split('/').filter(Boolean);
-            docName = pathParts[pathParts.length - 1];
+<script>
+    // URL Parameter থেকে dakhila-print এর মান বের করা
+    const urlParams = new URLSearchParams(window.location.search);
+    let docName = urlParams.get('dakhila-print');
+
+    // যদি ?dakhila-print= না থাকে, তবে URL Path (/dakhila-print/image_name) থেকে বের করবে
+    if (!docName) {
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        docName = pathParts[pathParts.length - 1];
+    }
+
+    const imgElement = document.getElementById('docImage');
+    const errorElement = document.getElementById('errorMsg');
+    const printBar = document.getElementById('printBar');
+
+    if (docName && docName !== 'dakhila-print' && docName !== 'my.bo') {
+        
+        // যদি ছবির নামের শেষে .jpg বা .png না থাকে তবে .jpg যোগ করবে
+        if (!docName.includes('.')) {
+            docName = docName + '.jpg';
         }
 
-        const imgElement = document.getElementById('docImage');
-        const errorElement = document.getElementById('errorMsg');
-        const printBar = document.getElementById('printBar');
-
-        if (docName && docName !== 'dakhila-print' && docName !== 'my.bo') {
-            
-            // যদি নামের শেষে .jpg / .png না থাকে তবে স্বয়ংক্রিয়ভাবে .jpg যোগ করবে
-            if (!docName.includes('.')) {
-                docName = docName + '.jpg';
-            }
-
-            // GitHub Repository-এর মূল ফোল্ডার থেকে ফাইল লোড করার জন্য সঠিক পথ তৈরি
-            imgElement.src = 'https://dakhilaldtaxportal.github.io/my.bo/' + docName;
-            imgElement.style.display = 'block';
-            printBar.style.display = 'block';
-            
-            imgElement.onerror = function() {
-                imgElement.style.display = 'none';
-                printBar.style.display = 'none';
-                errorElement.style.display = 'block';
-            };
-        } else {
+        // ছবির ফাইল লোড করা
+        imgElement.src = docName;
+        imgElement.style.display = 'block';
+        printBar.style.display = 'block';
+        
+        imgElement.onerror = function() {
+            imgElement.style.display = 'none';
+            printBar.style.display = 'none';
             errorElement.style.display = 'block';
-        }
-    </script>
-
-</body>
-</html>
+        };
+    } else {
+        errorElement.style.display = 'block';
+    }
+</script>
