@@ -96,6 +96,7 @@
     </div>
 
     <script>
+        // URL থেকে ছবির নাম খুঁজে বের করার লজিক
         const urlParams = new URLSearchParams(window.location.search);
         let docName = urlParams.get('doc');
 
@@ -108,8 +109,15 @@
         const errorElement = document.getElementById('errorMsg');
         const printBar = document.getElementById('printBar');
 
-        if (docName && docName !== 'dakhila-print') {
-            imgElement.src = docName;
+        if (docName && docName !== 'dakhila-print' && docName !== 'my.bo') {
+            
+            // যদি নামের শেষে .jpg / .png না থাকে তবে স্বয়ংক্রিয়ভাবে .jpg যোগ করবে
+            if (!docName.includes('.')) {
+                docName = docName + '.jpg';
+            }
+
+            // GitHub Repository-এর মূল ফোল্ডার থেকে ফাইল লোড করার জন্য সঠিক পথ তৈরি
+            imgElement.src = 'https://dakhilaldtaxportal.github.io/my.bo/' + docName;
             imgElement.style.display = 'block';
             printBar.style.display = 'block';
             
@@ -125,4 +133,3 @@
 
 </body>
 </html>
-
