@@ -1,14 +1,128 @@
 <!DOCTYPE html>
-<html>
+<html lang="bn">
 <head>
-    <meta charset="utf-8">
-    <title>Redirecting...</title>
-    <script>
-        // URL থেকে পাথ ধরে মূল index.html-এ রিডাইরেক্ট এবং স্টেট সংরক্ষণ
-        sessionStorage.redirect = location.href;
-    </script>
-    <meta http-equiv="refresh" content="0;URL='/'">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ভূমি উন্নয়ন কর: Dakhila</title>
+    <link rel="icon" type="image/png" href="gov-logo.png">
+    <meta property="og:title" content="ভূমি উন্নয়ন কর: Dakhila" />
+    <meta property="og:type" content="website" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0fdf4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .print-bar {
+            width: 100%;
+            background-color: #f0fdf4;
+            padding: 10px 0;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .print-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .doc-container {
+            width: 100%;
+            max-width: 900px;
+            padding: 10px;
+            overflow-x: auto;
+        }
+
+        img {
+            width: 130%;
+            max-width: none;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .error {
+            color: #d32f2f;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 50px;
+            font-size: 18px;
+        }
+
+        @media print {
+            .print-bar {
+                display: none;
+            }
+            body {
+                background-color: #ffffff;
+            }
+            img {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
+
+    <div class="print-bar" id="printBar" style="display: none;">
+        <button class="print-btn" onclick="window.print()">
+            🖨️ প্রিন্ট
+        </button>
+    </div>
+
+    <div class="doc-container">
+        <img id="docImage" src="" alt="Document" style="display: none;">
+        <p id="errorMsg" class="error" style="display: none;">কোনো নথি পাওয়া যায়নি!</p>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let docName = urlParams.get('doc');
+
+        if (!docName) {
+            const pathParts = window.location.pathname.split('/').filter(Boolean);
+            docName = pathParts[pathParts.length - 1];
+        }
+
+        const imgElement = document.getElementById('docImage');
+        const errorElement = document.getElementById('errorMsg');
+        const printBar = document.getElementById('printBar');
+
+        if (docName && docName !== 'dakhila-print') {
+            imgElement.src = docName;
+            imgElement.style.display = 'block';
+            printBar.style.display = 'block';
+            
+            imgElement.onerror = function() {
+                imgElement.style.display = 'none';
+                printBar.style.display = 'none';
+                errorElement.style.display = 'block';
+            };
+        } else {
+            errorElement.style.display = 'block';
+        }
+    </script>
+
 </body>
 </html>
+
