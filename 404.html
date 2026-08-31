@@ -4,57 +4,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ভূমি উন্নয়ন কর: Dakhila</title>
+    <link rel="icon" type="image/png" href="gov-logo.png">
+    <meta property="og:title" content="ভূমি উন্নয়ন কর: Dakhila" />
+    <meta property="og:type" content="website" />
+
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; background-color: #f0fdf4; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
-      .print-bar { width: 100%; background-color: #f0fdf4; padding: 10px 0; text-align: center; position: sticky; top: 0; z-index: 100; }
-      .print-btn { background-color: #3b82f6; color: white; border: none; padding: 8px 20px; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
-      .doc-container { width: 100%; max-width: 900px; padding: 10px; }
-        img { width: 130%; max-width: none; display: block; margin: 0 auto; }
-      .error { color: #d32f2f; font-weight: bold; text-align: center; margin-top: 50px; font-size: 18px; }
-        @media print {.print-bar { display: none; } img { width: 100%; } }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0fdf4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* প্রিন্ট বাটন সেকশন */
+        .print-bar {
+            width: 100%;
+            background-color: #f0fdf4;
+            padding: 10px 0;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .print-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* নথি বা ইমেজের কন্টেইনার */
+        .doc-container {
+            width: 100%;
+            max-width: 900px;
+            padding: 10px;
+            overflow-x: auto;
+        }
+
+        /* জুম করা ছবি প্রদর্শন */
+        img {
+            width: 130%;
+            max-width: none;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .error {
+            color: #d32f2f;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 50px;
+            font-size: 18px;
+        }
+
+        /* প্রিন্ট করার সময় প্রিন্ট বাটনটি লুকিয়ে যাবে */
+        @media print {
+            .print-bar {
+                display: none;
+            }
+            body {
+                background-color: #ffffff;
+            }
+            img {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
 
+    <!-- প্রিন্ট অপশন -->
     <div class="print-bar" id="printBar" style="display: none;">
-        <button class="print-btn" onclick="window.print()">🖨️ প্রিন্ট</button>
+        <button class="print-btn" onclick="window.print()">
+            🖨️ প্রিন্ট
+        </button>
     </div>
 
+    <!-- ইমেজ প্রদর্শন এলাকা -->
     <div class="doc-container">
         <img id="docImage" src="" alt="Document" style="display: none;">
         <p id="errorMsg" class="error" style="display: none;">কোনো নথি পাওয়া যায়নি!</p>
     </div>
 
     <script>
+        // URL Path (যেমন: /dakhila-print/A9U2EUU4MHZMNHhRMm1VUFKrWIRndz09) থেকে ছবির ফাইল বা আইডি বের করা
+        const pathname = window.location.pathname;
+        const pathParts = pathname.split('/').filter(Boolean);
+        
+        // URL-এর একদম শেষ অংশটি সংগৃহীত হবে
+        let docName = pathParts.length > 0 ? pathParts[pathParts.length - 1] : null;
+
         const imgElement = document.getElementById('docImage');
         const errorElement = document.getElementById('errorMsg');
         const printBar = document.getElementById('printBar');
 
-        let docName = null;
-        const path = window.location.pathname;
-        const search = new URLSearchParams(window.location.search).get('doc');
+        // যদি ছবির আইডি/নাম পাওয়া যায় এবং সেটি ফোল্ডারের নাম না হয়
+        if (docName && docName !== 'dakhila-print' && docName !== 'my.bo') {
+            
+            // রুট ফোল্ডার থেকে ফাইল লোড করা
+            imgElement.src = '/' + pathParts.slice(0, -2).join('/') + '/' + docName;
+            
+            // যদি উপরের সাধারণ পাথে না পায়, তবে স্রেফ নাম দিয়ে লোড করার চেষ্টা করা
+            imgElement.src = window.location.origin + '/' + pathParts[0] + '/' + docName;
 
-        if (path.includes('/dakhila-print/')) {
-            // Notun link: /dakhila-print/IMG.jpg
-            docName = path.split('/dakhila-print/')[1].replace(/\/$/, '');
-            docName = decodeURIComponent(docName);
-            if (docName &&!docName.includes('.')) {
-                docName += '.jpg'; //.jpg na dile auto add hobe
-            }
-            // GitHub er jonno full path banano
-            const base = path.substring(0, path.indexOf('/dakhila-print/') + 1);
-            imgElement.src = base + 'dakhila-print/' + docName.split('/').pop();
-        } else if (search) {
-            // Purono link:?doc=...
-            docName = search;
-            imgElement.src = docName;
-        }
-
-        if (docName) {
             imgElement.style.display = 'block';
             printBar.style.display = 'block';
-            imgElement.onerror = () => {
+            
+            imgElement.onerror = function() {
+                // ছবি পাওয়া না গেলে এই এরর দেখাবে
                 imgElement.style.display = 'none';
                 printBar.style.display = 'none';
                 errorElement.style.display = 'block';
@@ -63,5 +135,6 @@
             errorElement.style.display = 'block';
         }
     </script>
+
 </body>
 </html>
