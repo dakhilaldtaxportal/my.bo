@@ -3,68 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ডকুমেন্ট ভিউয়ার</title>
+    <title>ভূমি উন্নয়ন কর: Dakhila</title>
+    <link rel="icon" type="image/png" href="gov-logo.png">
+    <meta property="og:title" content="ভূমি উন্নয়ন কর: Dakhila" />
+    <meta property="og:type" content="website" />
+
     <style>
-        body { font-family: Arial, sans-serif; background: #eef2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px; width: 100%; text-align: center; }
-        img { max-width: 100%; height: auto; border: 1px solid #ccc; margin-top: 15px; border-radius: 4px; }
-        .error { color: red; font-weight: bold; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0fdf4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .print-bar {
+            width: 100%;
+            background-color: #f0fdf4;
+            padding: 10px 0;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .print-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .doc-container {
+            width: 100%;
+            max-width: 900px;
+            padding: 10px;
+            overflow-x: auto;
+        }
+
+        img {
+            width: 130%;
+            max-width: none;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .error {
+            color: #d32f2f;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 50px;
+            font-size: 18px;
+        }
+
+        @media print {
+            .print-bar {
+                display: none;
+            }
+            body {
+                background-color: #ffffff;
+            }
+            img {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
 
-<div class="container" id="content">
-    <h2>ডকুমেন্ট লোড হচ্ছে...</h2>
-</div>
+    <div class="print-bar" id="printBar" style="display: none;">
+        <button class="print-btn" onclick="window.print()">
+            🖨️ প্রিন্ট
+        </button>
+    </div>
 
-<script>
-    // ৪-৪ রিডাইরেক্ট হ্যান্ডলার (এখন সঠিক স্থানে <script> ট্যাগের ভেতরে রয়েছে)
-    (function() {
-        var redirect = sessionStorage.redirect;
-        delete sessionStorage.redirect;
-        if (redirect && redirect !== location.href) {
-            history.replaceState(null, null, redirect);
+    <div class="doc-container">
+        <img id="docImage" src="" alt="Document" style="display: none;">
+        <p id="errorMsg" class="error" style="display: none;">কোনো নথি পাওয়া যায়নি!</p>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let docName = urlParams.get('doc');
+
+        if (!docName) {
+            const pathParts = window.location.pathname.split('/').filter(Boolean);
+            docName = pathParts[pathParts.length - 1];
         }
-    })();
 
-    // ইমেজের HTML ডেটাবেস (টোকেন অনুযায়ী)
-    const db = {
-        "A4U1EUU4MHZMNHhRMm1VUFKrWIRndz09": {
-            title: "ভূমি উন্নয়ন কর রসিদ",
-            image: "https://via.placeholder.com/600x400.png?text=Land+Tax+Document"
-        },
-        "XYZ123ABC456": {
-            title: "অন্যান্য অনলাইন ফাইল",
-            image: "https://via.placeholder.com/600x400.png?text=Sample+File+Image"
-        }
-    };
+        const imgElement = document.getElementById('docImage');
+        const errorElement = document.getElementById('errorMsg');
+        const printBar = document.getElementById('printBar');
 
-    function renderDocument() {
-        const path = window.location.pathname;
-        const parts = path.split('/').filter(Boolean);
-        
-        // URL থেকে টোকেন বের করা
-        const token = parts[parts.length - 1]; 
-        const docData = db[token];
-
-        const contentDiv = document.getElementById('content');
-
-        if (docData) {
-            // টোকেন পাওয়া গেলে ইমেজের HTML রেন্ডার হবে
-            contentDiv.innerHTML = `
-                <h2>${docData.title}</h2>
-                <hr>
-                <img src="${docData.image}" alt="Document Image">
-            `;
-        } else if (parts.length === 0 || token === "index.html" || token === "taxportal.github.io") {
-            contentDiv.innerHTML = `<h2>স্বাগতম! ড্যাশবোর্ডে কোনো টোকেন দেওয়া হয়নি।</h2>`;
+        if (docName && docName !== 'dakhila-print') {
+            imgElement.src = docName;
+            imgElement.style.display = 'block';
+            printBar.style.display = 'block';
+            
+            imgElement.onerror = function() {
+                imgElement.style.display = 'none';
+                printBar.style.display = 'none';
+                errorElement.style.display = 'block';
+            };
         } else {
-            contentDiv.innerHTML = `<h2 class="error">404 - ডকুমেন্টটি পাওয়া যায়নি!</h2>`;
+            errorElement.style.display = 'block';
         }
-    }
-
-    renderDocument();
-</script>
+    </script>
 
 </body>
 </html>
