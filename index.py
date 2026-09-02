@@ -5,10 +5,9 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, Message
+from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup
 import aiohttp
 from geopy.distance import geodesic
-
 
 bot = Bot(token=os.getenv("BOT_TOKEN"))
 dp = Dispatcher()
@@ -19,14 +18,43 @@ class LocationSteps(StatesGroup):
   waiting_for_map_link = State()
 
 
-# শর্ট লিংক থেকে আসল গুগল ম্যাপস লিংক বের করার ফাংশন
-async def unshorten_url(url):
-  async with aiohttp.ClientSession() as session:
-    try:
-      async with session.get(url, allow_redirects=True) as response:
-        return str(response.url)
-    except Exception:
-      return url
+# গুগল ম্যাপস লিঙ্ক থেকে সঠিক Latitude/Longitude বের করার ফাংশন
+async def extract_coordinates(text):
+  # ১. যদি ইউজার সরাসরি "22.3569, 91.7832" এমন সংখ্যা পাঠায়
+  coord_match = re.search(r"(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)", text)
+  if coord_match and not text.startswith("http"):
+    return float(coord_match.group(1)), float(coord_match.group(2))
+
+  # ২. শর্ট লিঙ্ক রিডাইরেক্ট ট্র্যাক করা (User-Agent সহ)
+  headers = {
+      "User-Agent": (
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      )
+  }
+
+  target_url = text
+  if "http" in text:
+    async with aiohttp.ClientSession(headers=headers) as session:
+      try:
+        async with session.get(text, allow_redirects=True) as response:
+          target_url = str(response.url)
+      except Exception:
+        target_url = text
+
+  # ৩. ইউআরএল থেকে স্থানাঙ্ক খোঁজা
+  patterns = [
+      r"@(-?\d+\.\d+),(-?\d+\.\d+)",
+      r"q=(-?\d+\.\d+),(-?\d+\.\d+)",
+      r"!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)",
+      r"ll=(-?\d+\.\d+),(-?\d+\.\d+)",
+  ]
+
+  for pattern in patterns:
+    match = re.search(pattern, target_url)
+    if match:
+      return float(match.group(1)), float(match.group(2))
+
+  return None, None
 
 
 @dp.message(CommandStart())
@@ -41,7 +69,7 @@ async def start_cmd(message: Message, state: FSMContext):
 
   await message.answer(
       "👋 **দূরত্ব মাপার বটে স্বাগতম!**\n\n"
-      "প্রথমেই আপনার লাইভ বা কারেন্ট লোকেশনটি পাঠান:",
+      "প্রথমেই নিচের বাটন চেপে আপনার **Current Location** পাঠালুন:",
       reply_markup=kb,
       parse_mode="Markdown",
   )
@@ -56,39 +84,26 @@ async def handle_user_location(message: Message, state: FSMContext):
   await state.update_data(user_lat=user_lat, user_lon=user_lon)
 
   await message.answer(
-      "✅ আপনার বর্তমান লোকেশন পাওয়া গেছে!\n\n"
-      "এবার যে পিন পয়েন্টের দূরত্ব বের করতে চান, তার **Google Maps Link** টি পাঠান।",
+      "✅ আপনার বর্তমান লোকেশন সেভ হয়েছে!\n\n"
+      "এবার যে পিন পয়েন্টের দূরত্ব মাপতে চান, তার **Google Maps Link** অথবা **Coordinates (যেমন: 22.35, 91.78)** পাঠান।",
       parse_mode="Markdown",
   )
   await state.set_state(LocationSteps.waiting_for_map_link)
 
 
-@dp.message(LocationSteps.waiting_for_map_link, F.text)
+@dp.message(LocationSteps.waiting_for_map_link)
 async def handle_map_link(message: Message, state: FSMContext):
-  raw_link = message.text.strip()
+  text_input = message.text.strip() if message.text else ""
 
-  # যদি maps.app.goo.gl এর মতো শর্ট লিংক হয় তবে সেটিকে আসল লিংকে কনভার্ট করবে
-  if "maps.app.goo.gl" in raw_link or "goo.gl" in raw_link:
-    link = await unshorten_url(raw_link)
-  else:
-    link = raw_link
+  target_lat, target_lon = await extract_coordinates(text_input)
 
-  # গুগল ম্যাপসের লিংক থেকে Coordinate বের করা
-  coords_match = (
-      re.search(r"@(-?\d+\.\d+),(-?\d+\.\d+)", link)
-      or re.search(r"q=(-?\d+\.\d+),(-?\d+\.\d+)", link)
-      or re.search(r"!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)", link)
-  )
-
-  if not coords_match:
+  if target_lat is None or target_lon is None:
     await message.answer(
-        "❌ লিংকটি থেকে সঠিক লোকেশন বের করা যায়নি!\n"
-        "অনুগ্রহ করে লিংকটি না পাঠিয়ে গুগল ম্যাপসে পিন চেপে ধরে যে সংখ্যা দুটি (যেমন: `22.3569, 91.7832`) দেখায়, তা লিখে পাঠান।"
+        "❌ **সঠিক লোকেশন পাওয়া যায়নি!**\n\n"
+        "গুগল ম্যাপস থেকে পিনে ট্যাপ করলে নিচে যে **অক্ষরে লেখা সংখ্যা দুটি (যেমন: 22.3569, 91.7832)** দেখায়, তা কপি করে লিখে পাঠিয়ে দিন।",
+        parse_mode="Markdown",
     )
     return
-
-  target_lat = float(coords_match.group(1))
-  target_lon = float(coords_match.group(2))
 
   user_data = await state.get_data()
   user_coords = (user_data["user_lat"], user_data["user_lon"])
@@ -103,7 +118,7 @@ async def handle_map_link(message: Message, state: FSMContext):
 
   await message.answer(
       f"📍 **দূরত্ব ফলাফল:**\n\n"
-      f"আপনার বর্তমান স্থান থেকে পাঠানো পিন পয়েন্টের সরাসরি দূরত্ব: **{distance_str}**",
+      f"আপনার বর্তমান অবস্থান থেকে গন্তব্যের দূরত্ব: **{distance_str}**",
       parse_mode="Markdown",
   )
 
@@ -117,3 +132,4 @@ async def main():
 
 if __name__ == "__main__":
   asyncio.run(main())
+
