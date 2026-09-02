@@ -7,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup
 import aiohttp
+from aiohttp import web
 from geopy.distance import geodesic
 
 bot = Bot(token=os.getenv("BOT_TOKEN"))
@@ -18,14 +19,16 @@ class LocationSteps(StatesGroup):
   waiting_for_map_link = State()
 
 
-# গুগল ম্যাপস লিঙ্ক থেকে সঠিক Latitude/Longitude বের করার ফাংশন
+# Render Web Service-এর পোর্ট ওপেন রাখার জন্য ডামি হ্যান্ডলার
+async def handle_ping(request):
+  return web.Response(text="Location Bot is Running Live!")
+
+
 async def extract_coordinates(text):
-  # ১. যদি ইউজার সরাসরি "22.3569, 91.7832" এমন সংখ্যা পাঠায়
   coord_match = re.search(r"(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)", text)
   if coord_match and not text.startswith("http"):
     return float(coord_match.group(1)), float(coord_match.group(2))
 
-  # ২. শর্ট লিঙ্ক রিডাইরেক্ট ট্র্যাক করা (User-Agent সহ)
   headers = {
       "User-Agent": (
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -41,7 +44,6 @@ async def extract_coordinates(text):
       except Exception:
         target_url = text
 
-  # ৩. ইউআরএল থেকে স্থানাঙ্ক খোঁজা
   patterns = [
       r"@(-?\d+\.\d+),(-?\d+\.\d+)",
       r"q=(-?\d+\.\d+),(-?\d+\.\d+)",
@@ -69,7 +71,7 @@ async def start_cmd(message: Message, state: FSMContext):
 
   await message.answer(
       "👋 **দূরত্ব মাপার বটে স্বাগতম!**\n\n"
-      "প্রথমেই নিচের বাটন চেপে আপনার **Current Location** পাঠালুন:",
+      "প্রথমেই নিচের বাটন চেপে আপনার **Current Location** পাঠান:",
       reply_markup=kb,
       parse_mode="Markdown",
   )
@@ -85,7 +87,7 @@ async def handle_user_location(message: Message, state: FSMContext):
 
   await message.answer(
       "✅ আপনার বর্তমান লোকেশন সেভ হয়েছে!\n\n"
-      "এবার যে পিন পয়েন্টের দূরত্ব মাপতে চান, তার **Google Maps Link** অথবা **Coordinates (যেমন: 22.35, 91.78)** পাঠান।",
+      "এবার যে পিন পয়েন্টের দূরত্ব মাপতে চান, তার **Google Maps Link** অথবা **Coordinates (যেমন: 22.3569, 91.7832)** পাঠান।",
       parse_mode="Markdown",
   )
   await state.set_state(LocationSteps.waiting_for_map_link)
@@ -100,7 +102,7 @@ async def handle_map_link(message: Message, state: FSMContext):
   if target_lat is None or target_lon is None:
     await message.answer(
         "❌ **সঠিক লোকেশন পাওয়া যায়নি!**\n\n"
-        "গুগল ম্যাপস থেকে পিনে ট্যাপ করলে নিচে যে **অক্ষরে লেখা সংখ্যা দুটি (যেমন: 22.3569, 91.7832)** দেখায়, তা কপি করে লিখে পাঠিয়ে দিন।",
+        "গুগল ম্যাপস থেকে পিনে ট্যাপ করলে নিচে যে **সংখ্যা দুটি (যেমন: 22.3569, 91.7832)** দেখায়, তা কপি করে লিখে পাঠাতে পারেন।",
         parse_mode="Markdown",
     )
     return
@@ -126,10 +128,19 @@ async def handle_map_link(message: Message, state: FSMContext):
 
 
 async def main():
+  # Render-এর পোর্টের জন্য HTTP Dummy Server চালু করা
+  app = web.Application()
+  app.router.add_get("/", handle_ping)
+  runner = web.AppRunner(app)
+  await runner.setup()
+  port = int(os.environ.get("PORT", 8080))
+  site = web.TCPSite(runner, "0.0.0.0", port)
+  await site.start()
+
+  # টেলিগ্রাম বট পলিং স্টার্ট
   print("Location Distance Bot is running...")
   await dp.start_polling(bot)
 
 
 if __name__ == "__main__":
   asyncio.run(main())
-
