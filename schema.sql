@@ -1,0 +1,3 @@
+-- Optional: the Node.js app creates the tables automatically.
+-- Run this only if you want to inspect/prepare the database manually.
+-- See src/db.js for the canonical schema.
