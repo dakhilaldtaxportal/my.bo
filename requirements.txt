@@ -1,8 +1,5 @@
 aiogram
 psycopg2-binary
 python-dotenv
-aiogram
-psycopg2-binary
-python-dotenv
 aiohttp
 geopy
